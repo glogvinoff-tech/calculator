@@ -1,80 +1,153 @@
-calc.MemorySubtract();
-                Console.WriteLine($"Вычтено из памяти: {calc.GetCurrentValue()}");
-                break;
-            case "MR":
-                double memoryValue = calc.MemoryRecall();
-                calc.SetCurrentValue(memoryValue);
-                Console.WriteLine($"Восстановлено из памяти: {memoryValue}");
-                break;
-            case "MC":
-                calc.ClearMemory();
-                Console.WriteLine("Память очищена");
-                break;
-        
-        Console.ReadKey();
-    
-    static void HandleBinaryOperation(string input, Calculator calc)
+using System;
+
+class Calculator
+{
+    private double currentValue;
+    private double memoryValue;
+    private string lastOperation;
+    private bool newInput;
+
+    public Calculator()
     {
-        int operatorPos = -1;
-        char[] operators = { '+', '-', '*', '/', '%' };
-        foreach (char op in operators)
+        currentValue = 0;
+        memoryValue = 0;
+        lastOperation = "";
+        newInput = true;
+    }
+
+    public void ProcessDigit(int digit)
+    {
+        if (newInput)
         {
-            int pos = input.IndexOf(op);
-            if (pos > 0)
-            {
-                operatorPos = pos;
-                break;
-            }
+            currentValue = digit;
+            newInput = false;
         }
-        if (operatorPos == -1)
+        else
         {
-            Console.WriteLine("Ошибка: Не найден оператор (+, -, *, /, %)");
-            Console.ReadKey();
-            return;
+            currentValue = currentValue * 10 + digit;
         }
-        string num1Str = input.Substring(0, operatorPos).Trim();
-        char operation = input[operatorPos];
-        string num2Str = input.Substring(operatorPos + 1).Trim();
-        if (string.IsNullOrEmpty(num1Str) || string.IsNullOrEmpty(num2Str))
-        {
-            Console.WriteLine("Ошибка: Неверный формат выражения");
-            Console.ReadKey();
-            return;
-        }
-        double num1 = string.IsNullOrEmpty(num1Str) ? calc.GetCurrentValue() : Convert.ToDouble(num1Str);
-        double num2 = Convert.ToDouble(num2Str);
-        double result = 0;
+    }
+
+    public void ProcessOperation(string operation)
+    {
         switch (operation)
         {
-            case '+':
-                result = num1 + num2;
+            case "+":
+            case "-":
+            case "*":
+            case "/":
+                lastOperation = operation;
+                newInput = true;
                 break;
-            case '-':
-                result = num1 - num2;
+                
+            case "=":
+                CalculateResult();
+                lastOperation = "";
+                newInput = true;
                 break;
-            case '*':
-                result = num1 * num2;
+                
+            case "C":
+                currentValue = 0;
+                lastOperation = "";
+                newInput = true;
                 break;
-            case '/':
-                if (num2 == 0)
-                {
-                    Console.WriteLine("Ошибка: Деление на ноль!");
-                    Console.ReadKey();
-                    return;
-                }
-                result = num1 / num2;
+                
+            case "CE":
+                currentValue = 0;
+                newInput = true;
                 break;
-            case '%':
-                if (num2 == 0)
-                {
-                    Console.WriteLine("Ошибка: Деление на ноль!");
-                    Console.ReadKey();
-                    return;
-                }
-                result = num1 % num2;
+                
+            case "%":
+                currentValue /= 100;
+                break;
+                
+            case "1/x":
+                if (currentValue != 0)
+                    currentValue = 1 / currentValue;
+                newInput = true;
+                break;
+                
+            case "x^2":
+                currentValue *= currentValue;
+                newInput = true;
+                break;
+                
+            case "sqrt":
+                if (currentValue >= 0)
+                    currentValue = Math.Sqrt(currentValue);
+                newInput = true;
+                break;
+                
+            case "M+":
+                memoryValue += currentValue;
+                newInput = true;
+                break;
+                
+            case "M-":
+                memoryValue -= currentValue;
+                newInput = true;
+                break;
+                
+            case "MR":
+                currentValue = memoryValue;
+                newInput = true;
+                break;
+                
+            case "MC":
+                memoryValue = 0;
                 break;
         }
-        calc.SetCurrentValue(result);
-        Console.WriteLine($"{num1} {operation} {num2} = {result}");
-        Console.ReadKey();
     }
+
+    private void CalculateResult()
+    {
+        Console.WriteLine($"Выполнена операция: {lastOperation}");
+    }
+
+    public void DisplayCurrentState()
+    {
+        Console.WriteLine($"Текущее значение: {currentValue}");
+        Console.WriteLine($"Значение в памяти: {memoryValue}");
+        Console.WriteLine($"Последняя операция: {lastOperation}");
+        Console.WriteLine("---");
+    }
+
+    public double GetCurrentValue() => currentValue;
+    public double GetMemoryValue() => memoryValue;
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Calculator calc = new Calculator();
+        bool running = true;
+
+        Console.WriteLine("Классический калькулятор");
+        Console.WriteLine("Доступные операции: +, -, *, /, %, 1/x, x^2, sqrt, M+, M-, MR, MC, C, CE, =");
+        Console.WriteLine("Для выхода введите 'exit'");
+
+        while (running)
+        {
+            Console.Write("Введите команду: ");
+            string input = Console.ReadLine();
+
+            if (input.ToLower() == "exit")
+            {
+                running = false;
+                continue;
+            }
+            if (int.TryParse(input, out int digit) && digit >= 0 && digit <= 9)
+            {
+                calc.ProcessDigit(digit);
+            }
+            else
+            {
+                // Обрабатываем операцию
+                calc.ProcessOperation(input);
+            }
+
+            calc.DisplayCurrentState();
+        }
+    }
+}
