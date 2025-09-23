@@ -143,7 +143,6 @@ class Program
             }
             else
             {
-                // Обрабатываем операцию
                 calc.ProcessOperation(input);
             }
 
